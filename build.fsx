@@ -59,7 +59,7 @@ open System.IO
 Target "UpdateFsxVersions" (fun _ ->
     let path = "./src/RProvider/RProvider.fsx"
     let mutable text = File.ReadAllText(path)
-    for package in [ "DynamicInterop"; "R.NET.Community"; "R.NET.Community.FSharp" ] do
+    for package in [ "DynamicInterop"; "R.NET"; "R.NET.FSharp" ] do
       let version = GetPackageVersion "packages" package
       let pattern = "\\.\\./" + package + ".([0-9\\.]*)/lib"
       let replacement = sprintf "../%s.%s/lib" package version
@@ -99,21 +99,22 @@ Target "BuildTests" (fun _ ->
 
 
 Target "RunTests" (fun _ ->
-    let xunitPath = "packages/xunit.runners/tools/xunit.console.clr4.exe"
+    let xunitPath = "packages/xunit.runner.console/tools/net472/xunit.console.exe"
 
     ActivateFinalTarget "CloseTestRunner"
 
     !! "tests/Test.RProvider/bin/**/Test*.dll"
-    |> xUnit (fun p ->
+    |> xUnit2 (fun p ->
             {p with
                 ToolPath = xunitPath
                 ShadowCopy = false
-                HtmlOutputPath = Some "."
-                XmlOutputPath = Some "." })
+                // HtmlOutputPath = Some "."
+                // XmlOutputPath = Some "." })
+                })
 )
 
 FinalTarget "CloseTestRunner" (fun _ ->
-    ProcessHelper.killProcess "xunit.console.clr4.exe"
+    ProcessHelper.killProcess "xunit.console.exe"
 )
 
 // --------------------------------------------------------------------------------------
@@ -134,9 +135,9 @@ Target "NuGet" (fun _ ->
             Tags = tags
             OutputPath = "bin"
             Dependencies =
-              [ "R.NET.Community", GetPackageVersion "packages" "R.NET.Community"
+              [ "R.NET", GetPackageVersion "packages" "R.NET"
                 "DynamicInterop", GetPackageVersion "packages" "DynamicInterop"
-                "R.NET.Community.FSharp", GetPackageVersion "packages" "R.NET.Community.FSharp" ]
+                "R.NET.FSharp", GetPackageVersion "packages" "R.NET.FSharp" ]
               |> List.map specificVersion
             AccessKey = getBuildParamOrDefault "nugetkey" ""
             Publish = hasBuildParam "nugetkey" })
